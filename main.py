@@ -7,6 +7,7 @@ fieldSize = (750, 750)
 window = py.display.set_mode(fieldSize)
 
 field = cl.Field()
+field.spawnSnake(cl.Position(10,5), cl.State.HEAD_UP, 10)
 
 def drawGameWindow():
     
