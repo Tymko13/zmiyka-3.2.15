@@ -7,13 +7,14 @@ fieldSize = (750, 750)
 window = py.display.set_mode(fieldSize)
 
 field = cl.Field()
-field.spawnSnake(cl.Position(10,5), cl.State.HEAD_UP, 10)
+field.spawn_snake(cl.Position(0, 0), cl.State.HEAD_LEFT, 10)
 
-def drawGameWindow():
-    
-    window.fill((0,0,0))
+
+def draw_game_window():
+    window.fill((0, 0, 0))
     field.draw(window)
     py.display.update()
+
 
 running = True
 while running:
@@ -21,9 +22,8 @@ while running:
         if event.type == py.QUIT:
             running = False
 
-    drawGameWindow()
+    draw_game_window()
 
-    clock.tick(60) # FPS
+    clock.tick(60)  # FPS
 
 py.quit()
-    
