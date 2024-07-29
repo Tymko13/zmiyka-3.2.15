@@ -79,16 +79,20 @@ class Snake:
     snake = deque()
 
     def __init__(self, head_position, facing, length, field):
+        self.direction = facing
+        self.field = field
         self.snake.append(head_position)
-        field.set_square_state(head_position, facing)
+        self.field.set_square_state(head_position, facing)
         for i in range(length - 1):
-            head_position -= facing.value
+            head_position -= self.direction.value
             self.snake.append(head_position)
-            field.set_square_state(head_position, State.TAIL)
+            self.field.set_square_state(head_position, State.TAIL)
 
-    def move(self, field):
-        field.set_square_state(self.snake.pop(), State.EMPTY)
-
+    def move(self):
+        self.field.set_square_state(self.snake[0], State.TAIL)
+        self.snake.appendleft(self.snake[0] + self.direction.value)
+        self.field.set_square_state(self.snake[0], self.direction)
+        self.field.set_square_state(self.snake.pop(), State.EMPTY)
 
 class Field:
     field = []
@@ -103,7 +107,7 @@ class Field:
             if self.state == State.EMPTY:
                 color = COOL_BLUE_COLOR  # Блакитний
             else:
-                color = COOL_RED_COLOR  # Червоний
+                color = COOL_YELLOW_COLOR  # Червоний
             py.draw.rect(window, color, self.rect, 10)
 
     def __init__(self):
