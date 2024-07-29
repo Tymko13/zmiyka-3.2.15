@@ -64,6 +64,9 @@ class Position:
 
     def __ne__(self, other):
         return not self.__eq__(other)
+    
+    def copy(self):
+        return Position(self.x, self.y)
 
 
 class State(Enum):
@@ -81,11 +84,11 @@ class Snake:
     def __init__(self, head_position, facing, length, field):
         self.direction = facing
         self.field = field
-        self.snake.append(head_position)
+        self.snake.append(head_position.copy())
         self.field.set_square_state(head_position, facing)
         for i in range(length - 1):
             head_position -= self.direction.value
-            self.snake.append(head_position)
+            self.snake.append(head_position.copy())
             self.field.set_square_state(head_position, State.TAIL)
 
     def move(self):
