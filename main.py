@@ -1,22 +1,28 @@
-import pygame
+import pygame as py
 import ClassClaster as cl
+
+py.init()
+clock = py.time.Clock()
+fieldSize = (750, 750)
+window = py.display.set_mode(fieldSize)
 
 field = cl.Field()
 
-pygame.init()
-screen = pygame.display.set_mode((1280, 720))
-clock = pygame.time.Clock()
-running = True
+def drawGameWindow():
+    
+    window.fill((0,0,0))
+    field.draw(window)
+    py.display.update()
 
+running = True
 while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+    for event in py.event.get():
+        if event.type == py.QUIT:
             running = False
 
-    screen.fill("purple")
-    pygame.display.flip()
+    drawGameWindow()
 
-    clock.tick(60)
+    clock.tick(60) # FPS
 
-pygame.quit()
+py.quit()
     
