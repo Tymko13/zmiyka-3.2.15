@@ -14,7 +14,8 @@ COOL_GREEN_COLOR = (50, 150, 50)
 
 # 1. spawn apples +
 # 2. remake spawn mechanics
-# 3. add brrrrrrrrrr
+# 3. add brrrrrrrrrr +
+# 4. rewrite dying (some mats like apple)
 
 
 class Position:
@@ -76,6 +77,11 @@ class Position:
         return Position(self.x, self.y)
 
 
+class SpeedState(Enum):
+    NORMAL = 1
+    ACCELERATION = 0
+
+
 class State(Enum):
     EMPTY = 0
     APPLE = 3
@@ -87,9 +93,6 @@ class State(Enum):
     
 
 class Field:
-    field = []
-    snakes = []
-
     class Square:
         state = State.EMPTY
 
@@ -108,6 +111,8 @@ class Field:
             py.draw.rect(window, color, self.rect, 10)
 
     def __init__(self):
+        self.field = []
+        self.snakes = []
         for i in range(FIELD_SIZE):
             self.field.append([])  # Створює рядки поля
             for j in range(FIELD_SIZE):
@@ -124,7 +129,7 @@ class Field:
 
     def random_spawn_apple(self, tries: int = 10) -> bool:
         for n in range(tries):
-            if self.spawn_apple(Position(randint(0, 24), randint(0, 24))):  # 24 inclusive
+            if self.spawn_apple(Position(randint(0, FIELD_SIZE - 1), randint(0, FIELD_SIZE - 1))):  # FIELD_SIZE - 1 inclusive
                 return True
         return False
 
@@ -133,6 +138,9 @@ class Field:
 
     def get_square_state(self, position: Position) -> State:
         return self.field[position.y][position.x].state
+
+    def set_snakes_speed_state(self, index: int, state: SpeedState) -> None:
+        self.snakes[index].set_speed_state(state)
 
     def move_snake(self, index: int, direction: State) -> None:
         self.snakes[index].move(direction)
@@ -144,10 +152,11 @@ class Field:
                 
 
 class Snake:
-    snake = deque()
-    food = 0
-
     def __init__(self, head_position: Position, facing: State, length: int, field: Field):
+        self.snake = deque()
+        self.food = 0
+        self.move_timer = 0
+        self.speed_state = SpeedState.NORMAL
         self.direction = facing
         self.field = field
         self.snake.append(head_position.copy())
@@ -161,7 +170,18 @@ class Snake:
         for part in self.snake:
             self.field.set_square_state(part, State.EMPTY)
 
+    def set_speed_state(self, state: SpeedState) -> None:
+        self.speed_state = state
+        self.move_timer = state.value
+
     def move(self, direction: State) -> None:
+        if self.move_timer != 0:
+            self.move_timer -= 1
+            return
+        
+        # if move_timer == 0
+        self.move_timer = self.speed_state.value    
+
         if self.direction.value != -direction.value:
             self.direction = direction
         # else don't change
