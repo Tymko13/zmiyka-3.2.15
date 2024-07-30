@@ -2,6 +2,7 @@ from email.mime import application
 import pygame as py
 from enum import Enum
 from collections import deque
+from random import randint
 
 SQUARE_SIZE = 30  # Ширина та висота клітинок поля в пікселях
 FIELD_SIZE = 25  # Ширина та висота поля в клітинках
@@ -10,6 +11,10 @@ COOL_BLUE_COLOR = (100, 100, 200)
 COOL_RED_COLOR = (200, 100, 100)
 COOL_YELLOW_COLOR = (200, 200, 100)
 COOL_GREEN_COLOR = (50, 150, 50)
+
+# 1. spawn apples +
+# 2. remake spawn mechanics
+# 3. add brrrrrrrrrr
 
 
 class Position:
@@ -115,6 +120,12 @@ class Field:
         if self.get_square_state(position) == State.EMPTY:
             self.set_square_state(position, State.APPLE)
             return True
+        return False
+
+    def random_spawn_apple(self, tries: int = 10) -> bool:
+        for n in range(tries):
+            if self.spawn_apple(Position(randint(0, 24), randint(0, 24))):  # 24 inclusive
+                return True
         return False
 
     def set_square_state(self, position: Position, state: State) -> None:
