@@ -1,7 +1,7 @@
 import pygame as py
 from enum import Enum
 from collections import deque
-from random import randint
+from random import randint, random
 from interface_utils import color
 
 # SQUARE_SIZE = 30  # Ширина та висота клітинок поля в пікселях
@@ -28,13 +28,14 @@ TAIL_BASE_COLOR = color("F9844A")
 TAIL_BORDER_COLOR = color("FBA174")
 
 
-# 1. spawn apples +
-# 2. remake spawn mechanics +
-# 3. add brrrrrrrrrr +
-# 4. rewrite dying (some mats like apple) +
-# 5. maybe some reaction to collision with something - not dying instantly +
-# 6. head to head 
-# 7. while brrrrrrrrrrr lose lenght
+# near-death mech +
+# 1. fix near_death bug +
+# 2. head direction +
+# set_speed() + 
+# while brrrrrrrrrrr lose lenght +
+# snake remove at one time +
+
+# head to head +-
 
 
 class Position:
@@ -110,16 +111,19 @@ def rand_free_position(field: list) -> Position or None:
         rand_index = randint(0, len(free_positions) - 1)
         return Position(free_positions[rand_index][0], free_positions[rand_index][1])
 
+def rand_event(odd: float) -> bool:
+    return random() <= odd
+
 
 # values normally represent game cycles (FPS of the game)
 class LiveState(Enum):
     ONE_TIME = 0
-    REVIVABLE = 20
+    REVIVABLE = 300
 
 
 class SpeedState(Enum):
-    NORMAL = 10
-    ACCELERATION = 5
+    NORMAL = 30
+    ACCELERATION = 10
 
 
 class State(Enum):
@@ -137,6 +141,7 @@ class Field:
     class Square:
         def __init__(self, x: int, y: int, size: float):
             self.state = State.EMPTY
+            self.snake = None
             self.size = size
             self.rect = (x, y, int(size), int(size))
 
@@ -171,9 +176,10 @@ class Field:
                 py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3, self.rect[1] + self.size // 3), 2)
                 py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3, self.rect[1] + self.size // 3 * 2), 2)
 
-    def __init__(self, x: int, y: int, size: float) -> None:
+    def __init__(self, x: int, y: int, size: float):
         self.field = []
         self.snakes = []
+        self.to_remove_snakes = []
         square_size = int(size // 25)
         for i in range(25):
             self.field.append([])  # Створює рядки поля
@@ -181,8 +187,10 @@ class Field:
                 self.field[-1].append(
                     Field.Square(j * square_size + x, i * square_size + y, square_size))  # Створює клітинки рядків
 
-    def spawn_snake(self, head_position: Position, facing: State, length: int, live: LiveState) -> None:
-        self.snakes.append(Snake(head_position, facing, length, live, self))
+    def spawn_snake(self, head_position: Position, facing: State, length: int, live: LiveState, coyote_death_time: int,
+                    drop_start_sprint: bool, sprint_lose_weight: int, odd_when_dying: float) -> None:
+        self.snakes.append(Snake(head_position, facing, length, live, coyote_death_time, 
+                                 drop_start_sprint,sprint_lose_weight, odd_when_dying, self))
 
     def spawn_snack(self, position: Position) -> bool:
         if self.get_square_state(position) == State.EMPTY:
@@ -190,11 +198,8 @@ class Field:
             return True
         return False
 
-    def random_spawn_snack(self, tries: int = 10) -> bool:
-        for n in range(tries):
-            if self.spawn_snack(rand_position()):
-                return True
-        return False
+    def random_spawn_snack(self) -> None:
+        self.spawn_snack(rand_free_position(self.field))
 
     def spawn_apple(self, position: Position) -> bool:
         if self.get_square_state(position) == State.EMPTY:
@@ -202,14 +207,12 @@ class Field:
             return True
         return False
 
-    def random_spawn_apple(self, tries: int = 10) -> bool:
-        for n in range(tries):
-            if self.spawn_apple(rand_position()):
-                return True
-        return False
+    def random_spawn_apple(self) -> None:
+        self.spawn_apple(rand_free_position(self.field))
 
-    def set_square_state(self, position: Position, state: State) -> None:
+    def set_square_state(self, position: Position, state: State, Snake = None) -> None:
         self.field[position.y][position.x].state = state
+        self.field[position.y][position.x].snake = Snake
 
     def get_square_state(self, position: Position) -> State:
         return self.field[position.y][position.x].state
@@ -220,6 +223,11 @@ class Field:
     def move_snake(self, index: int, direction: State) -> None:
         self.snakes[index].move(direction)
 
+    def remove_snakes(self) -> None:
+        while len(self.to_remove_snakes) != 0:
+            remove_func = self.to_remove_snakes.pop(0)
+            remove_func()
+
     def draw(self, window: py.Surface) -> None:
         for row in self.field:
             for square in row:
@@ -227,7 +235,9 @@ class Field:
 
 
 class Snake:
-    def __init__(self, head_position: Position, facing: State, length: int, live: LiveState, field: Field):
+    def __init__(self, head_position: Position, facing: State, length: int, live: LiveState,
+                 coyote_death_time: int, drop_start_sprint: bool, sprint_lose_weight: int, odd_when_dying: float,
+                 field: Field):
         self.snake = deque()
         self.field = field
         self.direction = facing
@@ -237,28 +247,43 @@ class Snake:
         self.move_timer = 0
         self.speed_state = SpeedState.NORMAL
 
-        self.start_tail_length = length - 1
-        self.near_death = False  # represents if sneak would have died previous move
+        self.DROP_START_SPRINT = drop_start_sprint
+        self.sprint_lose_weight_timer = 0
+        self.SPRINT_LOSE_WEIGHT = sprint_lose_weight
+        self.ODD_WHEN_DYING = odd_when_dying
+
+        self.START_TAIL_LENGHT = length - 1
+        self.near_death_counter = 0  # represents if sneak would have died previous move
+        self.COYOTE_DEATH_TIME = coyote_death_time
         self.revive_timer = 0
-        self.live_state = live
+        self.LIVE_STATE = live
 
         self.snake.append(head_position.copy())
-        self.field.set_square_state(head_position, facing)
+        self.field.set_square_state(head_position, facing, self)
 
-        for i in range(self.start_tail_length):
+        for i in range(self.START_TAIL_LENGHT):
             head_position -= facing.value
             self.snake.append(head_position.copy())
-            self.field.set_square_state(head_position, State.TAIL)
+            self.field.set_square_state(head_position, State.TAIL, self)
 
     def set_speed_state(self, state: SpeedState) -> None:
         self.speed_state = state
-        self.move_timer = state.value
+        self.move_timer = 0
+        if state == SpeedState.ACCELERATION:
+            self.sprint_lose_weight_timer = 0
+            if self.DROP_START_SPRINT:
+                self.lose_weight()
+
+    def lose_weight(self) -> None:
+        if len(self.snake) > 1:
+            self.field.set_square_state(self.snake.pop(), State.SNACK)
 
     def revive(self) -> None:
         # direction is same as before death
-        self.food = self.start_tail_length
+        self.food = self.START_TAIL_LENGHT
 
         self.move_timer = 0
+        self.sprint_lose_weight_timer = 0
 
         random_pos = rand_free_position(self.field.field)
         if random_pos == None:
@@ -266,11 +291,11 @@ class Snake:
 
         self.revive_timer = 0
         self.snake.append(random_pos.copy())
-        self.field.set_square_state(random_pos, self.direction)
+        self.field.set_square_state(random_pos, self.direction, self)
 
     def remove(self) -> None:
         while not len(self.snake) == 0:
-            if randint(0, 9):  # 90%
+            if rand_event(self.ODD_WHEN_DYING):
                 self.field.set_square_state(self.snake.popleft(), State.EMPTY)
             else:
                 self.field.set_square_state(self.snake.popleft(), State.SNACK)  # leave some mats
@@ -279,16 +304,17 @@ class Snake:
         self.remove(self)
         self.field.snakes.remove(self)
 
-    def dying_check(self):
-        if not self.near_death:
-            self.near_death = True
+    def dying_check(self, new_direction: State) -> None:
+        if self.near_death_counter != self.COYOTE_DEATH_TIME:
+            self.near_death_counter += 1
+            self.field.set_square_state(self.snake[0], new_direction, self)
         else:
-            if self.live_state == LiveState.ONE_TIME:
-                self.complete_remove()
+            if self.LIVE_STATE == LiveState.ONE_TIME:
+                self.field.to_remove_snakes.append(self.complete_remove)
             else:
-                self.remove()
-                self.revive_timer = self.live_state.value
-                self.near_death = False
+                self.field.to_remove_snakes.append(self.remove)
+                self.revive_timer = self.LIVE_STATE.value
+                self.near_death_counter = 0
 
     def move(self, direction: State) -> None:
         # if needs to be revived
@@ -319,15 +345,15 @@ class Snake:
 
         # check if going out of field
         if new_head_position.x < 0 or new_head_position.x >= 25:
-            self.dying_check()
+            self.dying_check(direction)
             return
         if new_head_position.y < 0 or new_head_position.y >= 25:
-            self.dying_check()
+            self.dying_check(direction)
             return
 
         # means if snake crashes into its end-tail, but also it will grow next move
         if new_head_position == self.snake[-1] and self.food != 0:
-            self.dying_check()
+            self.dying_check(direction)
             return
 
         state_of_square = self.field.get_square_state(new_head_position)
@@ -336,18 +362,26 @@ class Snake:
             self.food += State.APPLE.value
         elif state_of_square == State.SNACK:
             self.food += State.SNACK.value
-        elif isinstance(state_of_square.value, Position):  # meaning snake's head
-            # TODO : snakes' heads collision
-            pass
+        #elif isinstance(state_of_square.value, Position):  # meaning snake's head
+            # TODO : snakes' heads collision    
         elif state_of_square != State.EMPTY:
-            self.dying_check()
+            self.dying_check(direction)
             return
 
         # if all checks done - than we can move our snake
-        self.field.set_square_state(self.snake[0], State.TAIL)  # making old head a tail
+        self.near_death_counter = 0
+
+        if self.speed_state == SpeedState.ACCELERATION:
+            if self.sprint_lose_weight_timer == self.SPRINT_LOSE_WEIGHT:
+                self.lose_weight()
+                self.sprint_lose_weight_timer = 0
+            else:
+                self.sprint_lose_weight_timer += 1
+
+        self.field.set_square_state(self.snake[0], State.TAIL, self)  # making old head a tail
         if self.food != 0:
             self.food -= 1
         else:
             self.field.set_square_state(self.snake.pop(), State.EMPTY)  # delete tail
         self.snake.appendleft(new_head_position)  # adding a new head
-        self.field.set_square_state(self.snake[0], self.direction)  # drawing new! head
+        self.field.set_square_state(self.snake[0], self.direction, self)  # drawing new! head
