@@ -4,16 +4,28 @@ from collections import deque
 from random import randint
 from interface_utils import color
 
-SQUARE_SIZE = 30  # Ширина та висота клітинок поля в пікселях
-FIELD_SIZE = 25  # Ширина та висота поля в клітинках
+# SQUARE_SIZE = 30  # Ширина та висота клітинок поля в пікселях
+# FIELD_SIZE = 25  # Ширина та висота поля в клітинках
+#
+# FIELD_COLOR = (100, 100, 200)
+#
+# SNAKE_HEAD_COLOR = (200, 60, 0)
+# SNAKE_TAIL_COLOR = (255, 80, 0)
+#
+# APPLE_COLOR = (200, 100, 100)
+# SNACK_COLOR = (200, 200, 100)
 
-FIELD_COLOR = (100, 100, 200)
+APPLE_BASE_COLOR = color("F94144")
+APPLE_BORDER_COLOR = color("FA6163")
 
-SNAKE_HEAD_COLOR = (200, 60, 0)
-SNAKE_TAIL_COLOR = (255, 80, 0)
+EMPTY_BASE_COLOR = color("577590")
+EMPTY_BORDER_COLOR = color("6687A3")
 
-APPLE_COLOR = (200, 100, 100)
-SNACK_COLOR = (200, 200, 100)
+SNACK_BASE_COLOR = color("F9C74F")
+SNACK_BORDER_COLOR = color("FBD989")
+
+TAIL_BASE_COLOR = color("F9844A")
+TAIL_BORDER_COLOR = color("FBA174")
 
 
 # 1. spawn apples +
@@ -85,11 +97,11 @@ class Position:
 
 
 def rand_position() -> Position:
-    return Position(randint(0, FIELD_SIZE - 1), randint(0, FIELD_SIZE - 1))  # FIELD_SIZE - 1 inclusive
+    return Position(randint(0, 24), randint(0, 24))  # FIELD_SIZE - 1 inclusive
 
 
 def rand_free_position(field: list) -> Position or None:
-    free_positions = [(row, col) for row in range(FIELD_SIZE) for col in range(FIELD_SIZE) if
+    free_positions = [(row, col) for row in range(25) for col in range(25) if
                       field[row][col].state == State.EMPTY]
 
     if len(free_positions) == 0:
@@ -130,17 +142,18 @@ class Field:
 
         def draw(self, window: py.Surface) -> None:
             if self.state == State.EMPTY:
-                base_color = color("577590")
-                border_color = color("6687A3")
+                base_color = EMPTY_BASE_COLOR
+                border_color = EMPTY_BORDER_COLOR
             elif self.state == State.APPLE:
-                base_color = color("F94144")
-                border_color = color("FA6163")
+                base_color = APPLE_BASE_COLOR
+                border_color = APPLE_BORDER_COLOR
             elif self.state == State.SNACK:
-                base_color = color("F9C74F")
-                border_color = color("FBD989")
+                base_color = SNACK_BASE_COLOR
+                border_color = SNACK_BORDER_COLOR
             else:
-                base_color = color("F9844A")
-                border_color = color("FBA174")
+                base_color = TAIL_BASE_COLOR
+                border_color = TAIL_BORDER_COLOR
+
             py.draw.rect(window, base_color, self.rect, 0)
             py.draw.rect(window, border_color, self.rect, 1)
             if self.state == State.HEAD_UP:
@@ -148,10 +161,12 @@ class Field:
                 py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3 * 2, self.rect[1] + self.size // 3), 2)
             elif self.state == State.HEAD_RIGHT:
                 py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3 * 2, self.rect[1] + self.size // 3), 2)
-                py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3 * 2, self.rect[1] + self.size // 3 * 2), 2)
+                py.draw.circle(window, (0, 0, 0),
+                               (self.rect[0] + self.size // 3 * 2, self.rect[1] + self.size // 3 * 2), 2)
             elif self.state == State.HEAD_DOWN:
                 py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3, self.rect[1] + self.size // 3 * 2), 2)
-                py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3 * 2, self.rect[1] + self.size // 3 * 2), 2)
+                py.draw.circle(window, (0, 0, 0),
+                               (self.rect[0] + self.size // 3 * 2, self.rect[1] + self.size // 3 * 2), 2)
             elif self.state == State.HEAD_LEFT:
                 py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3, self.rect[1] + self.size // 3), 2)
                 py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3, self.rect[1] + self.size // 3 * 2), 2)
@@ -163,7 +178,8 @@ class Field:
         for i in range(25):
             self.field.append([])  # Створює рядки поля
             for j in range(25):
-                self.field[-1].append(Field.Square(j * square_size + x, i * square_size + y, square_size))  # Створює клітинки рядків
+                self.field[-1].append(
+                    Field.Square(j * square_size + x, i * square_size + y, square_size))  # Створює клітинки рядків
 
     def spawn_snake(self, head_position: Position, facing: State, length: int, live: LiveState) -> None:
         self.snakes.append(Snake(head_position, facing, length, live, self))
@@ -302,14 +318,14 @@ class Snake:
         new_head_position = self.snake[0] + self.direction.value
 
         # check if going out of field
-        if new_head_position.x < 0 or new_head_position.x >= FIELD_SIZE:
+        if new_head_position.x < 0 or new_head_position.x >= 25:
             self.dying_check()
             return
-        if new_head_position.y < 0 or new_head_position.y >= FIELD_SIZE:
+        if new_head_position.y < 0 or new_head_position.y >= 25:
             self.dying_check()
             return
 
-        # means if snake crashes into its end-tail but also it will grow next move
+        # means if snake crashes into its end-tail, but also it will grow next move
         if new_head_position == self.snake[-1] and self.food != 0:
             self.dying_check()
             return
