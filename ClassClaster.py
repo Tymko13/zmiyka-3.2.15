@@ -102,8 +102,8 @@ class LiveState(Enum):
 
 
 class SpeedState(Enum):
-    NORMAL = 1
-    ACCELERATION = 0
+    NORMAL = 10
+    ACCELERATION = 5
 
 
 class State(Enum):
@@ -136,13 +136,13 @@ class Field:
                 color = SNAKE_HEAD_COLOR
             py.draw.rect(window, color, self.rect, 10)
 
-    def __init__(self):
+    def __init__(self, x: int, y: int) -> None:
         self.field = []
         self.snakes = []
         for i in range(FIELD_SIZE):
             self.field.append([])  # Створює рядки поля
             for j in range(FIELD_SIZE):
-                self.field[-1].append(Field.Square(j * SQUARE_SIZE, i * SQUARE_SIZE))  # Створює клітинки рядків
+                self.field[-1].append(Field.Square(j * SQUARE_SIZE + x, i * SQUARE_SIZE + y))  # Створює клітинки рядків
 
     def spawn_snake(self, head_position: Position, facing: State, length: int, live: LiveState) -> None:
         self.snakes.append(Snake(head_position, facing, length, live, self))
