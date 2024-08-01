@@ -171,7 +171,7 @@ class Field:
                 py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3, self.rect[1] + self.size // 3), 2)
                 py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3, self.rect[1] + self.size // 3 * 2), 2)
 
-    def __init__(self, x: int, y: int, size: float) -> None:
+    def __init__(self, x: float, y: float, size: float) -> None:
         self.field = []
         self.snakes = []
         square_size = int(size // 25)
@@ -179,7 +179,7 @@ class Field:
             self.field.append([])  # Створює рядки поля
             for j in range(25):
                 self.field[-1].append(
-                    Field.Square(j * square_size + x, i * square_size + y, square_size))  # Створює клітинки рядків
+                    Field.Square(j * square_size + int(x), i * square_size + int(y), square_size))  # Створює клітинки рядків
 
     def spawn_snake(self, head_position: Position, facing: State, length: int, live: LiveState) -> None:
         self.snakes.append(Snake(head_position, facing, length, live, self))

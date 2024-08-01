@@ -13,6 +13,8 @@ MONITOR_HEIGHT = get_monitors()[0].height
 width = MONITOR_WIDTH / 2
 height = MONITOR_HEIGHT / 2
 
+field_size = height * 0.85
+
 # Base colors for game elements
 BACKGROUND_COLOR = color("577590")
 TEXT_COLOR = color("F9C74F")
@@ -29,14 +31,12 @@ def start_game():
     BACKGROUND_COLOR = color("263340")
     game_state = GameState.GAME
     global field
-    field = Field(100, 100, width // 2)
     field.spawn_snake(Position(20, 2), State.HEAD_RIGHT, 6, LiveState.REVIVABLE)
 
 
 # Toggles fullscreen
 def fullscreen():
-    global width
-    global height
+    global width, height
     if width == MONITOR_WIDTH:
         width = MONITOR_WIDTH // 2
         height = MONITOR_HEIGHT // 2
@@ -44,11 +44,16 @@ def fullscreen():
         width = MONITOR_WIDTH
         height = MONITOR_HEIGHT
     py.display.set_mode((width, height))
+
     global CAPTION_FONT, BUTTON_FONT, main_menu_buttons
     CAPTION_FONT = py.font.Font("Rubik.ttf", int(width // 8))
     BUTTON_FONT = py.font.Font("Rubik.ttf", int(height // 14))
     for button in main_menu_buttons:
         button.set_font(BUTTON_FONT)
+
+    global field, field_size
+    field_size = height * 0.85
+    field = Field(height * 0.075, height * 0.075, field_size)
 
 
 # Stops the program and closes the window
@@ -105,6 +110,7 @@ snack_spawn_timer = SNACK_SPAWN
 apple_spawn_timer = APPLE_SPAWN
 
 direction = State.HEAD_RIGHT
+field = Field(height * 0.075, height * 0.075, field_size)
 
 
 def render_game(current_frame: int):
