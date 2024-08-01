@@ -2,6 +2,7 @@ import pygame as py
 from enum import Enum
 from collections import deque
 from random import randint
+from interface_utils import color
 
 SQUARE_SIZE = 30  # Ширина та висота клітинок поля в пікселях
 FIELD_SIZE = 25  # Ширина та висота поля в клітинках
@@ -13,6 +14,7 @@ SNAKE_TAIL_COLOR = (255, 80, 0)
 
 APPLE_COLOR = (200, 100, 100)
 SNACK_COLOR = (200, 200, 100)
+
 
 # 1. spawn apples +
 # 2. remake spawn mechanics +
@@ -77,23 +79,25 @@ class Position:
 
     def __ne__(self, other):
         return not self.__eq__(other)
-    
+
     def copy(self):
         return Position(self.x, self.y)
-    
+
 
 def rand_position() -> Position:
     return Position(randint(0, FIELD_SIZE - 1), randint(0, FIELD_SIZE - 1))  # FIELD_SIZE - 1 inclusive
 
+
 def rand_free_position(field: list) -> Position or None:
-    free_positions = [ (row, col) for row in range(FIELD_SIZE) for col in range(FIELD_SIZE) if field[row][col].state == State.EMPTY ]
-    
+    free_positions = [(row, col) for row in range(FIELD_SIZE) for col in range(FIELD_SIZE) if
+                      field[row][col].state == State.EMPTY]
+
     if len(free_positions) == 0:
         return None
     else:
         rand_index = randint(0, len(free_positions) - 1)
         return Position(free_positions[rand_index][0], free_positions[rand_index][1])
-    
+
 
 # values normally represent game cycles (FPS of the game)
 class LiveState(Enum):
@@ -115,7 +119,7 @@ class State(Enum):
     HEAD_UP = Position(0, -1)
     HEAD_RIGHT = Position(1, 0)
     HEAD_DOWN = Position(0, 1)
-    
+
 
 class Field:
     class Square:
@@ -125,16 +129,31 @@ class Field:
 
         def draw(self, window: py.Surface) -> None:
             if self.state == State.EMPTY:
-                color = FIELD_COLOR
+                base_color = color("577590")
+                border_color = color("6687A3")
             elif self.state == State.APPLE:
-                color = APPLE_COLOR
+                base_color = color("F94144")
+                border_color = color("FA6163")
             elif self.state == State.SNACK:
-                color = SNACK_COLOR
-            elif self.state == State.TAIL:
-                color = SNAKE_TAIL_COLOR
+                base_color = color("F9C74F")
+                border_color = color("FBD989")
             else:
-                color = SNAKE_HEAD_COLOR
-            py.draw.rect(window, color, self.rect, 10)
+                base_color = color("F9844A")
+                border_color = color("FBA174")
+            py.draw.rect(window, base_color, self.rect, 0)
+            py.draw.rect(window, border_color, self.rect, 1)
+            if self.state == State.HEAD_UP:
+                py.draw.circle(window, (0, 0, 0), (self.rect[0] + 10, self.rect[1] + 10), 2)
+                py.draw.circle(window, (0, 0, 0), (self.rect[0] + 20, self.rect[1] + 10), 2)
+            elif self.state == State.HEAD_RIGHT:
+                py.draw.circle(window, (0, 0, 0), (self.rect[0] + 20, self.rect[1] + 10), 2)
+                py.draw.circle(window, (0, 0, 0), (self.rect[0] + 20, self.rect[1] + 20), 2)
+            elif self.state == State.HEAD_DOWN:
+                py.draw.circle(window, (0, 0, 0), (self.rect[0] + 10, self.rect[1] + 20), 2)
+                py.draw.circle(window, (0, 0, 0), (self.rect[0] + 20, self.rect[1] + 20), 2)
+            elif self.state == State.HEAD_LEFT:
+                py.draw.circle(window, (0, 0, 0), (self.rect[0] + 10, self.rect[1] + 10), 2)
+                py.draw.circle(window, (0, 0, 0), (self.rect[0] + 10, self.rect[1] + 20), 2)
 
     def __init__(self, x: int, y: int) -> None:
         self.field = []
@@ -187,27 +206,27 @@ class Field:
         for row in self.field:
             for square in row:
                 square.draw(window)
-                
+
 
 class Snake:
     def __init__(self, head_position: Position, facing: State, length: int, live: LiveState, field: Field):
         self.snake = deque()
         self.field = field
         self.direction = facing
-        
+
         self.food = 0
-        
+
         self.move_timer = 0
         self.speed_state = SpeedState.NORMAL
-        
+
         self.start_tail_length = length - 1
         self.near_death = False  # represents if sneak would have died previous move
         self.revive_timer = 0
         self.live_state = live
-        
+
         self.snake.append(head_position.copy())
         self.field.set_square_state(head_position, facing)
-        
+
         for i in range(self.start_tail_length):
             head_position -= facing.value
             self.snake.append(head_position.copy())
@@ -220,13 +239,13 @@ class Snake:
     def revive(self) -> None:
         # direction is same as before death
         self.food = self.start_tail_length
-        
+
         self.move_timer = 0
-        
+
         random_pos = rand_free_position(self.field.field)
         if random_pos == None:
             return
-        
+
         self.revive_timer = 0
         self.snake.append(random_pos.copy())
         self.field.set_square_state(random_pos, self.direction)
@@ -236,7 +255,7 @@ class Snake:
             if randint(0, 9):  # 90%
                 self.field.set_square_state(self.snake.popleft(), State.EMPTY)
             else:
-                self.field.set_square_state(self.snake.popleft(), State.SNACK) # leave some mats
+                self.field.set_square_state(self.snake.popleft(), State.SNACK)  # leave some mats
 
     def complete_remove(self) -> None:
         self.remove(self)
@@ -277,9 +296,9 @@ class Snake:
         if self.direction.value != -direction.value:
             self.direction = direction
         # else don't change
-        
+
         new_head_position = self.snake[0] + self.direction.value
-        
+
         # check if going out of field
         if new_head_position.x < 0 or new_head_position.x >= FIELD_SIZE:
             self.dying_check()
@@ -294,7 +313,7 @@ class Snake:
             return
 
         state_of_square = self.field.get_square_state(new_head_position)
-        
+
         if state_of_square == State.APPLE:
             self.food += State.APPLE.value
         elif state_of_square == State.SNACK:
@@ -305,7 +324,7 @@ class Snake:
         elif state_of_square != State.EMPTY:
             self.dying_check()
             return
-        
+
         # if all checks done - than we can move our snake
         self.field.set_square_state(self.snake[0], State.TAIL)  # making old head a tail
         if self.food != 0:
@@ -314,4 +333,3 @@ class Snake:
             self.field.set_square_state(self.snake.pop(), State.EMPTY)  # delete tail
         self.snake.appendleft(new_head_position)  # adding a new head
         self.field.set_square_state(self.snake[0], self.direction)  # drawing new! head
-        

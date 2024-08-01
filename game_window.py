@@ -23,17 +23,6 @@ clock = py.time.Clock()
 screen = py.display.set_mode((width, height))
 py.display.set_caption("Змійка 3.2.15")
 
-CAPTION_FONT, BUTTON_FONT = py.font.Font("Rubik.ttf", int(width // 8)), py.font.Font("Rubik.ttf", int(height // 14))
-buttons = []
-
-
-def update_sizes():
-    global CAPTION_FONT, BUTTON_FONT, width, buttons
-    CAPTION_FONT = py.font.Font("Rubik.ttf", int(width // 8))
-    BUTTON_FONT = py.font.Font("Rubik.ttf", int(height // 14))
-    for button in buttons:
-        button.set_font(BUTTON_FONT)
-
 
 def start_game():
     global game_state
@@ -52,7 +41,11 @@ def fullscreen():
         width = MONITOR_WIDTH
         height = MONITOR_HEIGHT
     py.display.set_mode((width, height))
-    update_sizes()
+    global CAPTION_FONT, BUTTON_FONT, main_menu_buttons
+    CAPTION_FONT = py.font.Font("Rubik.ttf", int(width // 8))
+    BUTTON_FONT = py.font.Font("Rubik.ttf", int(height // 14))
+    for button in main_menu_buttons:
+        button.set_font(BUTTON_FONT)
 
 
 # Stops the program and closes the window
@@ -61,20 +54,18 @@ def quit_game():
     running = False
 
 
-def init_main_menu():
-    update_sizes()
+# Initializes buttons for main menu
+CAPTION_FONT, BUTTON_FONT = py.font.Font("Rubik.ttf", int(width // 8)), py.font.Font("Rubik.ttf", int(height // 14))
+main_menu_buttons = []
 
-    button_start = Button("Start", BUTTON_FONT, 0.5, 0.6, screen, start_game)
-    buttons.append(button_start)
+button_start = Button("Start", BUTTON_FONT, 0.5, 0.6, screen, start_game)
+main_menu_buttons.append(button_start)
 
-    button_start = Button("Fullscreen", BUTTON_FONT, 0.5, 0.7, screen, fullscreen)
-    buttons.append(button_start)
+button_start = Button("Fullscreen", BUTTON_FONT, 0.5, 0.7, screen, fullscreen)
+main_menu_buttons.append(button_start)
 
-    button_start = Button("Quit", BUTTON_FONT, 0.5, 0.8, screen, quit_game)
-    buttons.append(button_start)
-
-
-init_main_menu()
+button_start = Button("Quit", BUTTON_FONT, 0.5, 0.8, screen, quit_game)
+main_menu_buttons.append(button_start)
 
 
 class GameState(Enum):
@@ -95,8 +86,25 @@ def render_main_menu(current_frame: int):
     text_rect = text.get_rect(center=(width * 0.5, height * 0.3))
 
     screen.blit(text, text_rect)
-    for button in buttons:
+    for button in main_menu_buttons:
         button.process()
+
+
+field = Field(100, 100)
+field.spawn_snake(Position(20, 2), State.HEAD_RIGHT, 6, LiveState.REVIVABLE)
+
+w_pressed = False
+a_pressed = False
+s_pressed = False
+d_pressed = False
+j_pressed = False
+
+SNACK_SPAWN = 200
+APPLE_SPAWN = 1000
+snack_spawn_timer = SNACK_SPAWN
+apple_spawn_timer = APPLE_SPAWN
+
+direction = State.HEAD_RIGHT
 
 
 def init_game():
@@ -126,6 +134,8 @@ def init_game():
     apple_spawn_timer = APPLE_SPAWN
 
     direction = State.HEAD_RIGHT
+    global BACKGROUND_COLOR
+    BACKGROUND_COLOR = color("263340")
 
 
 def render_game(current_frame: int):
@@ -206,7 +216,7 @@ game_state = GameState.MAIN_MENU
 running = True
 while running:
     clock.tick(FPS)
-    # Number of the frame is useful for animations
+    # Frame number is useful for animations
     if frame > 2 ** 32 - 1:
         frame = 0
     else:
