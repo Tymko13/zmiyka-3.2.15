@@ -25,9 +25,12 @@ py.display.set_caption("Змійка 3.2.15")
 
 
 def start_game():
-    global game_state
-    init_game()
+    global game_state, BACKGROUND_COLOR
+    BACKGROUND_COLOR = color("263340")
     game_state = GameState.GAME
+    global field
+    field = Field(100, 100, width // 2)
+    field.spawn_snake(Position(20, 2), State.HEAD_RIGHT, 6, LiveState.REVIVABLE)
 
 
 # Toggles fullscreen
@@ -90,52 +93,18 @@ def render_main_menu(current_frame: int):
         button.process()
 
 
-field = Field(100, 100)
-field.spawn_snake(Position(20, 2), State.HEAD_RIGHT, 6, LiveState.REVIVABLE)
-
 w_pressed = False
 a_pressed = False
 s_pressed = False
 d_pressed = False
 j_pressed = False
 
-SNACK_SPAWN = 200
-APPLE_SPAWN = 1000
+SNACK_SPAWN = 150
+APPLE_SPAWN = 800
 snack_spawn_timer = SNACK_SPAWN
 apple_spawn_timer = APPLE_SPAWN
 
 direction = State.HEAD_RIGHT
-
-
-def init_game():
-    global field
-    global w_pressed
-    global a_pressed
-    global s_pressed
-    global d_pressed
-    global j_pressed
-    global SNACK_SPAWN
-    global APPLE_SPAWN
-    global snack_spawn_timer
-    global apple_spawn_timer
-    global direction
-    field = Field(100, 100)
-    field.spawn_snake(Position(20, 2), State.HEAD_RIGHT, 6, LiveState.REVIVABLE)
-
-    w_pressed = False
-    a_pressed = False
-    s_pressed = False
-    d_pressed = False
-    j_pressed = False
-
-    SNACK_SPAWN = 20
-    APPLE_SPAWN = 100
-    snack_spawn_timer = SNACK_SPAWN
-    apple_spawn_timer = APPLE_SPAWN
-
-    direction = State.HEAD_RIGHT
-    global BACKGROUND_COLOR
-    BACKGROUND_COLOR = color("263340")
 
 
 def render_game(current_frame: int):
@@ -150,9 +119,9 @@ def render_game(current_frame: int):
     global snack_spawn_timer
     global apple_spawn_timer
     global direction
+
     screen.fill(BACKGROUND_COLOR)
     keys = py.key.get_pressed()
-
     if keys[py.K_w]:
         if not w_pressed:
             w_pressed = True

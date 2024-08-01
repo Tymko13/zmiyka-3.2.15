@@ -123,9 +123,10 @@ class State(Enum):
 
 class Field:
     class Square:
-        def __init__(self, x: int, y: int):
+        def __init__(self, x: int, y: int, size: float):
             self.state = State.EMPTY
-            self.rect = (x, y, SQUARE_SIZE, SQUARE_SIZE)
+            self.size = size
+            self.rect = (x, y, int(size), int(size))
 
         def draw(self, window: py.Surface) -> None:
             if self.state == State.EMPTY:
@@ -143,25 +144,26 @@ class Field:
             py.draw.rect(window, base_color, self.rect, 0)
             py.draw.rect(window, border_color, self.rect, 1)
             if self.state == State.HEAD_UP:
-                py.draw.circle(window, (0, 0, 0), (self.rect[0] + 10, self.rect[1] + 10), 2)
-                py.draw.circle(window, (0, 0, 0), (self.rect[0] + 20, self.rect[1] + 10), 2)
+                py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3, self.rect[1] + self.size // 3), 2)
+                py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3 * 2, self.rect[1] + self.size // 3), 2)
             elif self.state == State.HEAD_RIGHT:
-                py.draw.circle(window, (0, 0, 0), (self.rect[0] + 20, self.rect[1] + 10), 2)
-                py.draw.circle(window, (0, 0, 0), (self.rect[0] + 20, self.rect[1] + 20), 2)
+                py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3 * 2, self.rect[1] + self.size // 3), 2)
+                py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3 * 2, self.rect[1] + self.size // 3 * 2), 2)
             elif self.state == State.HEAD_DOWN:
-                py.draw.circle(window, (0, 0, 0), (self.rect[0] + 10, self.rect[1] + 20), 2)
-                py.draw.circle(window, (0, 0, 0), (self.rect[0] + 20, self.rect[1] + 20), 2)
+                py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3, self.rect[1] + self.size // 3 * 2), 2)
+                py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3 * 2, self.rect[1] + self.size // 3 * 2), 2)
             elif self.state == State.HEAD_LEFT:
-                py.draw.circle(window, (0, 0, 0), (self.rect[0] + 10, self.rect[1] + 10), 2)
-                py.draw.circle(window, (0, 0, 0), (self.rect[0] + 10, self.rect[1] + 20), 2)
+                py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3, self.rect[1] + self.size // 3), 2)
+                py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3, self.rect[1] + self.size // 3 * 2), 2)
 
-    def __init__(self, x: int, y: int) -> None:
+    def __init__(self, x: int, y: int, size: float) -> None:
         self.field = []
         self.snakes = []
-        for i in range(FIELD_SIZE):
+        square_size = int(size // 25)
+        for i in range(25):
             self.field.append([])  # Створює рядки поля
-            for j in range(FIELD_SIZE):
-                self.field[-1].append(Field.Square(j * SQUARE_SIZE + x, i * SQUARE_SIZE + y))  # Створює клітинки рядків
+            for j in range(25):
+                self.field[-1].append(Field.Square(j * square_size + x, i * square_size + y, square_size))  # Створює клітинки рядків
 
     def spawn_snake(self, head_position: Position, facing: State, length: int, live: LiveState) -> None:
         self.snakes.append(Snake(head_position, facing, length, live, self))
