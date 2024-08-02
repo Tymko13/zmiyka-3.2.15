@@ -354,11 +354,16 @@ class Snake:
 
         state_of_square = self.field.get_square_state(new_head_position)
 
+        bite_sound = py.mixer.Sound("apple-bite.wav")
+        bite_sound.set_volume(0.3)
+
         if state_of_square == State.APPLE:
             self.food += State.APPLE.value
+            bite_sound.play()
         elif state_of_square == State.SNACK:
             self.food += State.SNACK.value
-        #elif isinstance(state_of_square.value, Position):  # meaning snake's head
+            bite_sound.play()
+        #  elif isinstance(state_of_square.value, Position):  # meaning snake's head
             # TODO : snakes' heads collision
         elif state_of_square != State.EMPTY:
             self.dying_check(self.direction)

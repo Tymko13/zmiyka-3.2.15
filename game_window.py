@@ -21,6 +21,11 @@ TEXT_COLOR = color("F9C74F")
 os.environ['SDL_VIDEO_CENTERED'] = '1'  # Centers the window
 
 py.init()
+py.mixer.init()
+py.mixer.music.load("8-bit-arcade.wav")
+py.mixer.music.set_volume(0.7)
+py.mixer.music.play(-1)
+
 clock = py.time.Clock()
 screen = py.display.set_mode((width, height))
 py.display.set_caption("Змійка 3.2.15")
@@ -35,6 +40,7 @@ def start_game():
     field = Field(100, 100, width // 2)
     field.spawn_snake(Position(10, 6), State.HEAD_RIGHT, 6, LiveState.REVIVABLE, 3, True, 30, 0.5)
     #field.spawn_snake(Position(15, 19), State.HEAD_LEFT, 6, LiveState.REVIVABLE, 3, True, 30, 0.5)
+
 
 # Toggles fullscreen
 def fullscreen():
@@ -189,8 +195,28 @@ def render_game(current_frame: int):
     field.draw(screen)
 
 
+def run_timer(current_frame: int):
+    global TIMER, FPS
+
+    current_time = TIMER / (FPS * 60)
+    timer_text = ""
+    if current_time < 10:
+        timer_text += "0"
+    timer_text += str(int(current_time))
+    current_time = int((current_time - int(current_time)) * 60)
+    if current_time < 10:
+        timer_text += "0"
+    timer_text += str(int(current_time))
+
+    timer = BUTTON_FONT.render(timer_text, True, TEXT_COLOR)
+    timer_rect = timer.get_rect(center=(height * 1.5, height // 14 * 2))
+    screen.blit(timer, timer_rect)
+    TIMER -= 1
+
+
 frame = 0
-FPS = 60
+FPS = 60  # In frames per second
+TIMER = 2 * 60 * FPS  # In minutes
 game_state = GameState.MAIN_MENU
 running = True
 while running:
@@ -205,10 +231,12 @@ while running:
         render_main_menu(frame)
     elif game_state == GameState.GAME:
         render_game(frame)
+        run_timer(frame)
 
     for event in py.event.get():
         if event.type == py.QUIT:
             running = False
     py.display.flip()
 
+py.mixer.music.stop()
 py.quit()
