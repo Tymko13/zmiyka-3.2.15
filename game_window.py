@@ -31,8 +31,9 @@ def start_game():
     BACKGROUND_COLOR = color("263340")
     game_state = GameState.GAME
     global field
-    field.spawn_snake(Position(20, 2), State.HEAD_RIGHT, 6, LiveState.REVIVABLE)
 
+    field = Field(100, 100, width // 2)
+    field.spawn_snake(Position(20, 2), State.HEAD_RIGHT, 6, LiveState.REVIVABLE, 1, True, 10, 0.5)
 
 # Toggles fullscreen
 def fullscreen():
@@ -182,6 +183,7 @@ def render_game(current_frame: int):
         snack_spawn_timer -= 1
 
     field.move_snake(0, direction)
+    field.remove_snakes()
     field.draw(screen)
 
 
@@ -192,7 +194,7 @@ running = True
 while running:
     clock.tick(FPS)
     # Frame number is useful for animations
-    if frame > 2 ** 32 - 1:
+    if frame > 3608:
         frame = 0
     else:
         frame += 1
