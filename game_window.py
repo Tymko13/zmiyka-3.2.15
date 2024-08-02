@@ -33,7 +33,8 @@ def start_game():
     global field
 
     field = Field(100, 100, width // 2)
-    field.spawn_snake(Position(20, 2), State.HEAD_RIGHT, 6, LiveState.REVIVABLE, 1, True, 10, 0.5)
+    field.spawn_snake(Position(10, 6), State.HEAD_RIGHT, 6, LiveState.REVIVABLE, 3, True, 30, 0.5)
+    #field.spawn_snake(Position(15, 19), State.HEAD_LEFT, 6, LiveState.REVIVABLE, 3, True, 30, 0.5)
 
 # Toggles fullscreen
 def fullscreen():
@@ -105,7 +106,7 @@ s_pressed = False
 d_pressed = False
 j_pressed = False
 
-SNACK_SPAWN = 150
+SNACK_SPAWN = 200
 APPLE_SPAWN = 800
 snack_spawn_timer = SNACK_SPAWN
 apple_spawn_timer = APPLE_SPAWN
@@ -183,6 +184,7 @@ def render_game(current_frame: int):
         snack_spawn_timer -= 1
 
     field.move_snake(0, direction)
+    #field.move_snake(1, direction)
     field.remove_snakes()
     field.draw(screen)
 

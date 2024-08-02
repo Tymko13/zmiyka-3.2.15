@@ -28,16 +28,6 @@ TAIL_BASE_COLOR = color("F9844A")
 TAIL_BORDER_COLOR = color("FBA174")
 
 
-# near-death mech +
-# 1. fix near_death bug +
-# 2. head direction +
-# set_speed() +
-# while brrrrrrrrrrr lose lenght +
-# snake remove at one time +
-
-# head to head +-
-
-
 class Position:
     def __init__(self, x=0, y=0):
         self.x = x
@@ -92,6 +82,9 @@ class Position:
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    def __repr__(self):
+        return "(" + str(self.x) + ", " + str(self.y) + ")"
 
     def copy(self):
         return Position(self.x, self.y)
@@ -337,7 +330,10 @@ class Snake:
         self.move_timer = self.speed_state.value
 
         # check if moving outside of tail
-        if self.direction.value != -direction.value:
+        if len(self.snake) > 1:
+            if self.snake[0] + direction.value != self.snake[1]:
+                self.direction = direction
+        else:
             self.direction = direction
         # else don't change
 
@@ -345,15 +341,15 @@ class Snake:
 
         # check if going out of field
         if new_head_position.x < 0 or new_head_position.x >= 25:
-            self.dying_check(direction)
+            self.dying_check(self.direction)
             return
         if new_head_position.y < 0 or new_head_position.y >= 25:
-            self.dying_check(direction)
+            self.dying_check(self.direction)
             return
 
         # means if snake crashes into its end-tail, but also it will grow next move
         if new_head_position == self.snake[-1] and self.food != 0:
-            self.dying_check(direction)
+            self.dying_check(self.direction)
             return
 
         state_of_square = self.field.get_square_state(new_head_position)
@@ -365,7 +361,7 @@ class Snake:
         #elif isinstance(state_of_square.value, Position):  # meaning snake's head
             # TODO : snakes' heads collision
         elif state_of_square != State.EMPTY:
-            self.dying_check(direction)
+            self.dying_check(self.direction)
             return
 
         # if all checks done - than we can move our snake
