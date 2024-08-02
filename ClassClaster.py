@@ -179,6 +179,7 @@ class Field:
     def __init__(self, x: float, y: float, size: float) -> None:
         self.field = []
         self.snakes = []
+        self.to_remove_snakes = []
         square_size = int(size // 25)
         for i in range(25):
             self.field.append([])  # Створює рядки поля
