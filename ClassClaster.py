@@ -176,9 +176,10 @@ class Field:
                 self.field[-1].append(
                     Field.Square(j * self.square_size + int(x), i * self.square_size + int(y), self.square_size))
 
+    # returns spawned snake
     def spawn_snake(self, head_position: Position, facing: State, length: int, live: LiveState, coyote_death_time: int,
-                    drop_start_sprint: bool, sprint_lose_weight: int, odd_when_dying: float) -> None:
-        self.snakes.append(Snake(head_position, facing, length, live, coyote_death_time,
+                    drop_start_sprint: bool, sprint_lose_weight: int, odd_when_dying: float):
+        return self.snakes.append(Snake(head_position, facing, length, live, coyote_death_time,
                                  drop_start_sprint, sprint_lose_weight, odd_when_dying, self))
 
     def spawn_snack(self, position: Position) -> bool:
@@ -222,8 +223,8 @@ class Field:
     def set_snakes_speed_state(self, index: int, state: SpeedState) -> None:
         self.snakes[index].set_speed_state(state)
 
-    def move_snake(self, index: int, direction: State) -> None:
-        self.snakes[index].move(direction)
+    def move_snake(self, snake, direction: State) -> None:
+        snake.move(direction)
 
     def remove_snakes(self) -> None:
         while len(self.to_remove_snakes) != 0:
