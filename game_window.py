@@ -14,6 +14,8 @@ width = MONITOR_WIDTH / 2
 height = MONITOR_HEIGHT / 2
 
 field_size = height * 0.85
+FIELD_SQUARE_SIZE = 25
+field = Field(height * 0.075, height * 0.075, FIELD_SQUARE_SIZE, field_size)
 
 # Base colors for game elements
 BACKGROUND_COLOR = color("577590")
@@ -35,11 +37,10 @@ def start_game():
     global game_state, BACKGROUND_COLOR
     BACKGROUND_COLOR = color("263340")
     game_state = GameState.GAME
-    global field
 
-    field = Field(100, 100, width // 2)
+    global field
     field.spawn_snake(Position(10, 6), State.HEAD_RIGHT, 6, LiveState.REVIVABLE, 3, True, 30, 0.5)
-    #field.spawn_snake(Position(15, 19), State.HEAD_LEFT, 6, LiveState.REVIVABLE, 3, True, 30, 0.5)
+    field.spawn_snake(Position(20, 15), State.HEAD_RIGHT, 6, LiveState.REVIVABLE, 3, True, 30, 0.5)
 
 
 # Toggles fullscreen
@@ -61,7 +62,7 @@ def fullscreen():
 
     global field, field_size
     field_size = height * 0.85
-    field = Field(height * 0.075, height * 0.075, field_size)
+    field = Field(height * 0.075, height * 0.075, FIELD_SQUARE_SIZE,field_size)
 
 
 # Stops the program and closes the window
@@ -87,6 +88,7 @@ main_menu_buttons.append(button_start)
 class GameState(Enum):
     MAIN_MENU = 0
     GAME = 1
+    GAME_OVER = 2
 
 
 def render_main_menu(current_frame: int):
@@ -118,7 +120,6 @@ snack_spawn_timer = SNACK_SPAWN
 apple_spawn_timer = APPLE_SPAWN
 
 direction = State.HEAD_RIGHT
-field = Field(height * 0.075, height * 0.075, field_size)
 
 
 def render_game(current_frame: int):
@@ -180,36 +181,38 @@ def render_game(current_frame: int):
     if apple_spawn_timer == 0:
         field.random_spawn_apple()
         apple_spawn_timer = APPLE_SPAWN
-    else:
-        apple_spawn_timer -= 1
+    apple_spawn_timer -= 1
 
     if snack_spawn_timer == 0:
         field.random_spawn_snack()
         snack_spawn_timer = SNACK_SPAWN
-    else:
-        snack_spawn_timer -= 1
+    snack_spawn_timer -= 1
 
     field.move_snake(0, direction)
-    #field.move_snake(1, direction)
+    # field.move_snake(1, direction)
     field.remove_snakes()
     field.draw(screen)
 
 
 def run_timer(current_frame: int):
-    global TIMER, FPS
+    global TIMER, FPS, game_state
 
     current_time = TIMER / (FPS * 60)
     timer_text = ""
     if current_time < 10:
         timer_text += "0"
     timer_text += str(int(current_time))
+    timer_text += ":"
     current_time = int((current_time - int(current_time)) * 60)
     if current_time < 10:
         timer_text += "0"
     timer_text += str(int(current_time))
 
+    if TIMER < 0:
+        game_state = GameState.GAME_OVER
+
     timer = BUTTON_FONT.render(timer_text, True, TEXT_COLOR)
-    timer_rect = timer.get_rect(center=(height * 1.5, height // 14 * 2))
+    timer_rect = timer.get_rect(center=(height + (width - height) // 2, height // 7))
     screen.blit(timer, timer_rect)
     TIMER -= 1
 

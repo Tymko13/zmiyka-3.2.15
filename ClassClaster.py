@@ -1,19 +1,10 @@
+import math
+
 import pygame as py
 from enum import Enum
 from collections import deque
 from random import randint, random
 from interface_utils import color
-
-# SQUARE_SIZE = 30  # Ширина та висота клітинок поля в пікселях
-# FIELD_SIZE = 25  # Ширина та висота поля в клітинках
-#
-# FIELD_COLOR = (100, 100, 200)
-#
-# SNAKE_HEAD_COLOR = (200, 60, 0)
-# SNAKE_TAIL_COLOR = (255, 80, 0)
-#
-# APPLE_COLOR = (200, 100, 100)
-# SNACK_COLOR = (200, 200, 100)
 
 APPLE_BASE_COLOR = color("F94144")
 APPLE_BORDER_COLOR = color("FA6163")
@@ -24,8 +15,15 @@ EMPTY_BORDER_COLOR = color("6687A3")
 SNACK_BASE_COLOR = color("F9C74F")
 SNACK_BORDER_COLOR = color("FBD989")
 
-TAIL_BASE_COLOR = color("F9844A")
-TAIL_BORDER_COLOR = color("FBA174")
+TAIL_BASE_COLOR_2 = color("F8793A")
+TAIL_BORDER_COLOR_2 = color("F9C74F")
+
+TAIL_BASE_COLOR = color("8BB964")
+TAIL_BORDER_COLOR = color("C0D8AB")
+
+py.mixer.init()
+bite_sound = py.mixer.Sound("apple-bite.wav")
+bite_sound.set_volume(0.3)
 
 
 class Position:
@@ -90,24 +88,6 @@ class Position:
         return Position(self.x, self.y)
 
 
-def rand_position() -> Position:
-    return Position(randint(0, 24), randint(0, 24))  # FIELD_SIZE - 1 inclusive
-
-
-def rand_free_position(field: list) -> Position or None:
-    free_positions = [(row, col) for row in range(25) for col in range(25) if
-                      field[row][col].state == State.EMPTY]
-
-    if len(free_positions) == 0:
-        return None
-    else:
-        rand_index = randint(0, len(free_positions) - 1)
-        return Position(free_positions[rand_index][0], free_positions[rand_index][1])
-
-def rand_event(odd: float) -> bool:
-    return random() <= odd
-
-
 # values normally represent game cycles (FPS of the game)
 class LiveState(Enum):
     ONE_TIME = 0
@@ -130,60 +110,76 @@ class State(Enum):
     HEAD_DOWN = Position(0, 1)
 
 
+def rand_event(odd: float) -> bool:
+    return random() <= odd
+
+
 class Field:
     class Square:
         def __init__(self, x: int, y: int, size: float):
             self.state = State.EMPTY
             self.snake = None
-            self.size = size
-            self.rect = (x, y, int(size), int(size))
+            self.size = int(size)
+            self.border_size = self.size // 25 + 1
+            self.rect = (x, y, self.size, self.size)
 
-        def draw(self, window: py.Surface) -> None:
-            if self.state == State.EMPTY:
-                base_color = EMPTY_BASE_COLOR
-                border_color = EMPTY_BORDER_COLOR
-            elif self.state == State.APPLE:
-                base_color = APPLE_BASE_COLOR
-                border_color = APPLE_BORDER_COLOR
-            elif self.state == State.SNACK:
-                base_color = SNACK_BASE_COLOR
-                border_color = SNACK_BORDER_COLOR
+        def draw(self, window: py.Surface, snake_color=None) -> None:
+            if snake_color is not None:
+                base_color = snake_color
+                border_color = snake_color
             else:
-                base_color = TAIL_BASE_COLOR
-                border_color = TAIL_BORDER_COLOR
+                if self.state == State.EMPTY:
+                    base_color = EMPTY_BASE_COLOR
+                    border_color = EMPTY_BORDER_COLOR
+                elif self.state == State.APPLE:
+                    base_color = APPLE_BASE_COLOR
+                    border_color = APPLE_BORDER_COLOR
+                elif self.state == State.SNACK:
+                    base_color = SNACK_BASE_COLOR
+                    border_color = SNACK_BORDER_COLOR
+                else:
+                    return
 
             py.draw.rect(window, base_color, self.rect, 0)
-            py.draw.rect(window, border_color, self.rect, 1)
-            if self.state == State.HEAD_UP:
-                py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3, self.rect[1] + self.size // 3), 2)
-                py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3 * 2, self.rect[1] + self.size // 3), 2)
-            elif self.state == State.HEAD_RIGHT:
-                py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3 * 2, self.rect[1] + self.size // 3), 2)
-                py.draw.circle(window, (0, 0, 0),
-                               (self.rect[0] + self.size // 3 * 2, self.rect[1] + self.size // 3 * 2), 2)
-            elif self.state == State.HEAD_DOWN:
-                py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3, self.rect[1] + self.size // 3 * 2), 2)
-                py.draw.circle(window, (0, 0, 0),
-                               (self.rect[0] + self.size // 3 * 2, self.rect[1] + self.size // 3 * 2), 2)
-            elif self.state == State.HEAD_LEFT:
-                py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3, self.rect[1] + self.size // 3), 2)
-                py.draw.circle(window, (0, 0, 0), (self.rect[0] + self.size // 3, self.rect[1] + self.size // 3 * 2), 2)
+            py.draw.rect(window, border_color, self.rect, self.border_size)
 
-    def __init__(self, x: float, y: float, size: float) -> None:
+            if self.state == State.HEAD_UP:
+                py.draw.circle(window, (0, 0, 0),
+                               (self.rect[0] + self.size // 3, self.rect[1] + self.size // 3), self.border_size)
+                py.draw.circle(window, (0, 0, 0),
+                               (self.rect[0] + self.size // 3 * 2, self.rect[1] + self.size // 3), self.border_size)
+            elif self.state == State.HEAD_RIGHT:
+                py.draw.circle(window, (0, 0, 0),
+                               (self.rect[0] + self.size // 3 * 2, self.rect[1] + self.size // 3), self.border_size)
+                py.draw.circle(window, (0, 0, 0),
+                               (self.rect[0] + self.size // 3 * 2, self.rect[1] + self.size // 3 * 2), self.border_size)
+            elif self.state == State.HEAD_DOWN:
+                py.draw.circle(window, (0, 0, 0),
+                               (self.rect[0] + self.size // 3, self.rect[1] + self.size // 3 * 2), self.border_size)
+                py.draw.circle(window, (0, 0, 0),
+                               (self.rect[0] + self.size // 3 * 2, self.rect[1] + self.size // 3 * 2), self.border_size)
+            elif self.state == State.HEAD_LEFT:
+                py.draw.circle(window, (0, 0, 0),
+                               (self.rect[0] + self.size // 3, self.rect[1] + self.size // 3), self.border_size)
+                py.draw.circle(window, (0, 0, 0),
+                               (self.rect[0] + self.size // 3, self.rect[1] + self.size // 3 * 2), self.border_size)
+
+    def __init__(self, x: float, y: float, field_size: float, size: float) -> None:
         self.field = []
         self.snakes = []
         self.to_remove_snakes = []
-        square_size = int(size // 25)
-        for i in range(25):
+        self.field_size = int(field_size)
+        self.square_size = int(size // field_size)
+        for i in range(self.field_size):
             self.field.append([])  # Створює рядки поля
-            for j in range(25):
+            for j in range(self.field_size):
                 self.field[-1].append(
-                    Field.Square(j * square_size + int(x), i * square_size + int(y), square_size))  # Створює клітинки рядків
+                    Field.Square(j * self.square_size + int(x), i * self.square_size + int(y), self.square_size))
 
     def spawn_snake(self, head_position: Position, facing: State, length: int, live: LiveState, coyote_death_time: int,
                     drop_start_sprint: bool, sprint_lose_weight: int, odd_when_dying: float) -> None:
         self.snakes.append(Snake(head_position, facing, length, live, coyote_death_time,
-                                 drop_start_sprint,sprint_lose_weight, odd_when_dying, self))
+                                 drop_start_sprint, sprint_lose_weight, odd_when_dying, self))
 
     def spawn_snack(self, position: Position) -> bool:
         if self.get_square_state(position) == State.EMPTY:
@@ -191,21 +187,34 @@ class Field:
             return True
         return False
 
-    def random_spawn_snack(self) -> None:
-        self.spawn_snack(rand_free_position(self.field))
-
     def spawn_apple(self, position: Position) -> bool:
         if self.get_square_state(position) == State.EMPTY:
             self.set_square_state(position, State.APPLE)
             return True
         return False
 
-    def random_spawn_apple(self) -> None:
-        self.spawn_apple(rand_free_position(self.field))
+    def rand_position(self) -> Position:
+        return Position(randint(0, self.field_size - 1), randint(0, self.field_size - 1))  # FIELD_SIZE - 1 inclusive
 
-    def set_square_state(self, position: Position, state: State, Snake = None) -> None:
+    def rand_free_position(self) -> Position or None:
+        free_positions = [(row, col) for row in range(self.field_size) for col in range(self.field_size) if
+                          self.field[row][col].state == State.EMPTY]
+
+        if len(free_positions) == 0:
+            return None
+        else:
+            rand_index = randint(0, len(free_positions) - 1)
+            return Position(free_positions[rand_index][0], free_positions[rand_index][1])
+
+    def random_spawn_snack(self) -> None:
+        self.spawn_snack(self.rand_free_position())
+
+    def random_spawn_apple(self) -> None:
+        self.spawn_apple(self.rand_free_position())
+
+    def set_square_state(self, position: Position, state: State, snake=None) -> None:
         self.field[position.y][position.x].state = state
-        self.field[position.y][position.x].snake = Snake
+        self.field[position.y][position.x].snake = snake
 
     def get_square_state(self, position: Position) -> State:
         return self.field[position.y][position.x].state
@@ -221,10 +230,15 @@ class Field:
             remove_func = self.to_remove_snakes.pop(0)
             remove_func()
 
-    def draw(self, window: py.Surface) -> None:
+    def get_square(self, position: Position) -> Square:
+        return self.field[position.y][position.x]
+
+    def draw(self, screen: py.Surface) -> None:
         for row in self.field:
             for square in row:
-                square.draw(window)
+                square.draw(screen)
+        for snake in self.snakes:
+            snake.draw(screen)
 
 
 class Snake:
@@ -234,6 +248,13 @@ class Snake:
         self.snake = deque()
         self.field = field
         self.direction = facing
+        self.name = len(self.field.snakes)
+        if self.name == 0:
+            self.start_color = TAIL_BASE_COLOR
+            self.end_color = TAIL_BORDER_COLOR
+        else:
+            self.start_color = TAIL_BASE_COLOR_2
+            self.end_color = TAIL_BORDER_COLOR_2
 
         self.food = 0
 
@@ -245,8 +266,8 @@ class Snake:
         self.SPRINT_LOSE_WEIGHT = sprint_lose_weight
         self.ODD_WHEN_DYING = odd_when_dying
 
-        self.START_TAIL_LENGHT = length - 1
-        self.near_death_counter = 0  # represents if sneak would have died previous move
+        self.START_TAIL_LENGTH = length - 1
+        self.near_death_counter = 0  # represents if sneak had died previous move
         self.COYOTE_DEATH_TIME = coyote_death_time
         self.revive_timer = 0
         self.LIVE_STATE = live
@@ -254,7 +275,7 @@ class Snake:
         self.snake.append(head_position.copy())
         self.field.set_square_state(head_position, facing, self)
 
-        for i in range(self.START_TAIL_LENGHT):
+        for i in range(self.START_TAIL_LENGTH):
             head_position -= facing.value
             self.snake.append(head_position.copy())
             self.field.set_square_state(head_position, State.TAIL, self)
@@ -273,13 +294,13 @@ class Snake:
 
     def revive(self) -> None:
         # direction is same as before death
-        self.food = self.START_TAIL_LENGHT
+        self.food = self.START_TAIL_LENGTH
 
         self.move_timer = 0
         self.sprint_lose_weight_timer = 0
 
-        random_pos = rand_free_position(self.field.field)
-        if random_pos == None:
+        random_pos = self.field.rand_free_position()
+        if random_pos is None:
             return
 
         self.revive_timer = 0
@@ -294,7 +315,7 @@ class Snake:
                 self.field.set_square_state(self.snake.popleft(), State.SNACK)  # leave some mats
 
     def complete_remove(self) -> None:
-        self.remove(self)
+        self.remove()
         self.field.snakes.remove(self)
 
     def dying_check(self, new_direction: State) -> None:
@@ -354,9 +375,6 @@ class Snake:
 
         state_of_square = self.field.get_square_state(new_head_position)
 
-        bite_sound = py.mixer.Sound("apple-bite.wav")
-        bite_sound.set_volume(0.3)
-
         if state_of_square == State.APPLE:
             self.food += State.APPLE.value
             bite_sound.play()
@@ -364,7 +382,7 @@ class Snake:
             self.food += State.SNACK.value
             bite_sound.play()
         #  elif isinstance(state_of_square.value, Position):  # meaning snake's head
-            # TODO : snakes' heads collision
+        # TODO : snakes' heads collision
         elif state_of_square != State.EMPTY:
             self.dying_check(self.direction)
             return
@@ -386,3 +404,19 @@ class Snake:
             self.field.set_square_state(self.snake.pop(), State.EMPTY)  # delete tail
         self.snake.appendleft(new_head_position)  # adding a new head
         self.field.set_square_state(self.snake[0], self.direction, self)  # drawing new! head
+
+    def draw(self, screen: py.Surface) -> None:
+        if len(self.snake) == 0:
+            return
+        color_step = ((self.end_color[0] - self.start_color[0]) / len(self.snake),
+                      (self.end_color[1] - self.start_color[1]) / len(self.snake),
+                      (self.end_color[2] - self.start_color[2]) / len(self.snake))
+        real_color = self.start_color
+        current_color = self.start_color
+        for square_pos in self.snake:
+            self.field.get_square(square_pos).draw(screen, real_color)
+            current_color = (current_color[0] + color_step[0],
+                             current_color[1] + color_step[1],
+                             current_color[2] + color_step[2])
+            real_color = (int(current_color[0]), int(current_color[1]), int(current_color[2]))
+
