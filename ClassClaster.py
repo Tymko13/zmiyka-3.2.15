@@ -15,11 +15,11 @@ EMPTY_BORDER_COLOR = color("6687A3")
 SNACK_BASE_COLOR = color("F9C74F")
 SNACK_BORDER_COLOR = color("FBD989")
 
-TAIL_BASE_COLOR_2 = color("F8793A")
-TAIL_BORDER_COLOR_2 = color("F9C74F")
+TAIL_BASE_COLOR = color("F8793A")
+TAIL_BORDER_COLOR = color("F9C74F")
 
-TAIL_BASE_COLOR = color("8BB964")
-TAIL_BORDER_COLOR = color("C0D8AB")
+TAIL_BASE_COLOR_2 = color("8BB964")
+TAIL_BORDER_COLOR_2 = color("C0D8AB")
 
 py.mixer.init()
 bite_sound = py.mixer.Sound("apple-bite.wav")

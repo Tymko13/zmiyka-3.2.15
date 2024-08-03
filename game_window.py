@@ -19,6 +19,7 @@ field = Field(height * 0.075, height * 0.075, FIELD_SQUARE_SIZE, field_size)
 
 # Base colors for game elements
 BACKGROUND_COLOR = color("577590")
+LIGHT_BACKGROUND_COLOR = color("577590")
 TEXT_COLOR = color("F9C74F")
 os.environ['SDL_VIDEO_CENTERED'] = '1'  # Centers the window
 
@@ -60,9 +61,11 @@ def fullscreen():
     for button in main_menu_buttons:
         button.set_font(BUTTON_FONT)
 
-    global field, field_size
+    global field, field_size, graph
     field_size = height * 0.85
     field = Field(height * 0.075, height * 0.075, FIELD_SQUARE_SIZE,field_size)
+    graph = Graph(2, height + 0.1 * (width - height), height // 14 * 3, 0.8 * (width - height), height // 14 * 4,
+                  0.08 * (width - height), 10)
 
 
 # Stops the program and closes the window
@@ -192,10 +195,15 @@ def render_game(current_frame: int):
     # field.move_snake(1, direction)
     field.remove_snakes()
     field.draw(screen)
+    py.draw.line(screen, LIGHT_BACKGROUND_COLOR, (height, 0), (height, height), 3)
+
+
+graph = Graph(2, height + 0.1 * (width - height), height // 14 * 3, 0.8 * (width - height), height // 14 * 4, 0.08 * (width - height), 10)
+previous_timer_text = ""
 
 
 def run_timer(current_frame: int):
-    global TIMER, FPS, game_state
+    global TIMER, FPS, game_state, graph, field, previous_timer_text
 
     current_time = TIMER / (FPS * 60)
     timer_text = ""
@@ -215,6 +223,11 @@ def run_timer(current_frame: int):
     timer_rect = timer.get_rect(center=(height + (width - height) // 2, height // 7))
     screen.blit(timer, timer_rect)
     TIMER -= 1
+
+    if previous_timer_text != timer_text:
+        graph.add_data(len(field.snakes[0].snake), len(field.snakes[1].snake))
+        previous_timer_text = timer_text
+    graph.draw(screen)
 
 
 frame = 0
