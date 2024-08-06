@@ -314,10 +314,13 @@ class Snake:
 
     def remove(self) -> None:
         while not len(self.snake) == 0:
+            square = self.field.get_square(self.snake.popleft())
             if rand_event(self.ODD_WHEN_DYING):
-                self.field.set_square_state(self.snake.popleft(), State.EMPTY)
+                square.state = State.EMPTY
             else:
-                self.field.set_square_state(self.snake.popleft(), State.SNACK)  # leave some mats
+                square.state = State.SNACK  # leave some mats
+                self.field.food.append(square)
+
 
     def complete_remove(self) -> None:
         self.remove()
