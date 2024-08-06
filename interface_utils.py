@@ -1,3 +1,5 @@
+import math
+
 import pygame as py
 
 
@@ -54,7 +56,7 @@ class Button:
 
 
 class Graph:
-    def __init__(self, size, x, y, width, height, capacity, step):
+    def __init__(self, size, x, y, width, height):
         self.size = int(size)
         self.data = []
         for i in range(size):
@@ -63,23 +65,30 @@ class Graph:
         self.y = int(y)
         self.width = int(width)
         self.height = int(height)
-        self.capacity = int(capacity)
-        self.step = int(step)
+        self.capacity = 60
+        self.step = self.width / self.capacity
+        self.scale = self.height / self.capacity
         self.colors = [color("F8793A"), color("8BB964")]
 
     def add_data(self, *args: float):
         if len(args) != self.size:
             print("Wrong number of arguments")
         else:
-            for i in range(len(self.data)):
+            for i in range(self.size):
                 self.data[i].append(args[i])
             while len(self.data[0]) > self.capacity:
                 for data in self.data:
                     data.pop(0)
 
     def draw(self, screen: py.Surface) -> None:
+        if len(self.data[0]) >= 2:
+            for i in range(self.size):
+                first_pos = (self.x, self.y + self.height - int((self.data[i][0] + 1) * self.scale))
+                second_pos = (self.x + int(self.step) + 1, self.y + self.height - int((self.data[i][1] + 1) * self.scale))
+                for j in range(len(self.data[i]) - 2):
+                    py.draw.line(screen, self.colors[i], first_pos, second_pos, 3)
+                    first_pos = second_pos
+                    second_pos = (self.x + int((j+2)*self.step) + 1, self.y + self.height - int((self.data[i][j + 2] + 1) * self.scale))
+                py.draw.line(screen, self.colors[i], first_pos, second_pos, 3)
         py.draw.line(screen, (255, 255, 255), (self.x, self.y), (self.x, self.y + self.height), 3)
-        py.draw.line(screen, (255, 255, 255), (self.x, self.y + self.height), (self.x + self.width, self.y + self.height), 3)
-        for i in range(len(self.data)):
-            for j in range(len(self.data[i]) - 1):
-                py.draw.line(screen, self.colors[i], (self.x + j * self.step, self.y + self.height - self.data[i][j] * 3), (self.x + (j + 1) * self.step, self.y + self.height - self.data[i][j+1] * 3), 3)
+        py.draw.line(screen, (255, 255, 255), (self.x, self.y + self.height),(self.x + self.width, self.y + self.height), 3)

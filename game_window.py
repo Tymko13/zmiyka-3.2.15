@@ -61,11 +61,11 @@ def fullscreen():
     for button in main_menu_buttons:
         button.set_font(BUTTON_FONT)
 
-    global field, field_size, graph
+    global field, field_size, graph, button_menu
     field_size = height * 0.85
     field = Field(height * 0.075, height * 0.075, FIELD_SQUARE_SIZE,field_size)
-    graph = Graph(2, height + 0.1 * (width - height), height // 14 * 3, 0.8 * (width - height), height // 14 * 4,
-                  0.08 * (width - height), 10)
+    graph = Graph(2, height + 0.15 * (width - height), height // 14 * 4, 0.7 * (width - height), height // 14 * 3)
+    button_menu = Button("Menu", BUTTON_FONT, (height + (width - height) / 2) / width, 0.85, screen, quit_game)
 
 
 # Stops the program and closes the window
@@ -198,11 +198,13 @@ def render_game(current_frame: int):
     py.draw.line(screen, LIGHT_BACKGROUND_COLOR, (height, 0), (height, height), 3)
 
 
-graph = Graph(2, height + 0.1 * (width - height), height // 14 * 3, 0.8 * (width - height), height // 14 * 4, 0.08 * (width - height), 10)
+graph = Graph(2, height + 0.15 * (width - height), height // 14 * 4, 0.7 * (width - height), height // 14 * 3)
 previous_timer_text = ""
 
+button_menu = Button("Menu", BUTTON_FONT, (height + (width - height) / 2) / width, 0.85, screen, quit_game)
 
-def run_timer(current_frame: int):
+
+def run_timer():
     global TIMER, FPS, game_state, graph, field, previous_timer_text
 
     current_time = TIMER / (FPS * 60)
@@ -228,6 +230,7 @@ def run_timer(current_frame: int):
         graph.add_data(len(field.snakes[0].snake), len(field.snakes[1].snake))
         previous_timer_text = timer_text
     graph.draw(screen)
+    button_menu.process()
 
 
 frame = 0
@@ -247,7 +250,7 @@ while running:
         render_main_menu(frame)
     elif game_state == GameState.GAME:
         render_game(frame)
-        run_timer(frame)
+        run_timer()
 
     for event in py.event.get():
         if event.type == py.QUIT:
