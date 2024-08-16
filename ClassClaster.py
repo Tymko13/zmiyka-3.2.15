@@ -322,7 +322,6 @@ class Snake:
                 square.state = State.SNACK  # leave some mats
                 self.field.food.append(square)
 
-
     def complete_remove(self) -> None:
         self.remove()
         self.field.snakes.remove(self)

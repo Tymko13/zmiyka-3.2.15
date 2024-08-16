@@ -1,5 +1,3 @@
-import math
-
 import pygame as py
 
 
@@ -84,11 +82,14 @@ class Graph:
         if len(self.data[0]) >= 2:
             for i in range(self.size):
                 first_pos = (self.x, self.y + self.height - int((self.data[i][0] + 1) * self.scale))
-                second_pos = (self.x + int(self.step) + 1, self.y + self.height - int((self.data[i][1] + 1) * self.scale))
+                second_pos = (
+                self.x + int(self.step) + 1, self.y + self.height - int((self.data[i][1] + 1) * self.scale))
                 for j in range(len(self.data[i]) - 2):
                     py.draw.line(screen, self.colors[i], first_pos, second_pos, 3)
                     first_pos = second_pos
-                    second_pos = (self.x + int((j+2)*self.step) + 1, self.y + self.height - int((self.data[i][j + 2] + 1) * self.scale))
+                    second_pos = (self.x + int((j + 2) * self.step) + 1,
+                                  self.y + self.height - int((self.data[i][j + 2] + 1) * self.scale))
                 py.draw.line(screen, self.colors[i], first_pos, second_pos, 3)
         py.draw.line(screen, (255, 255, 255), (self.x, self.y), (self.x, self.y + self.height), 3)
-        py.draw.line(screen, (255, 255, 255), (self.x, self.y + self.height),(self.x + self.width, self.y + self.height), 3)
+        py.draw.line(screen, (255, 255, 255), (self.x, self.y + self.height),
+                     (self.x + self.width, self.y + self.height), 3)

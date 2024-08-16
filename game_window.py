@@ -7,6 +7,8 @@ import os
 
 import CrazySnakeAI.brain as CAi
 
+from tymko_algo import get_direction
+
 # Size of user's monitor
 MONITOR_WIDTH = get_monitors()[0].width
 MONITOR_HEIGHT = get_monitors()[0].height
@@ -46,8 +48,9 @@ def start_game():
     global field, d_snake, t_snake
     d_snake = field.spawn_snake(Position(10, 6), State.HEAD_RIGHT, 6, LiveState.REVIVABLE, 3, True, 30, 0.5)
     t_snake = field.spawn_snake(Position(20, 15), State.HEAD_RIGHT, 6, LiveState.REVIVABLE, 3, True, 30, 0.5)
-    
-    CAi.start_game(d_snake)
+
+    # CAi.start_game(d_snake)
+    # CAi.start_game(t_snake)
 
 
 # Toggles fullscreen
@@ -69,7 +72,7 @@ def fullscreen():
 
     global field, field_size, graph, button_menu
     field_size = height * 0.85
-    field = Field(height * 0.075, height * 0.075, FIELD_SQUARE_SIZE,field_size)
+    field = Field(height * 0.075, height * 0.075, FIELD_SQUARE_SIZE, field_size)
     graph = Graph(2, height + 0.15 * (width - height), height // 14 * 4, 0.7 * (width - height), height // 14 * 3)
     button_menu = Button("Menu", BUTTON_FONT, (height + (width - height) / 2) / width, 0.85, screen, quit_game)
 
@@ -122,6 +125,7 @@ APPLE_SPAWN = 800
 snack_spawn_timer = SNACK_SPAWN
 apple_spawn_timer = APPLE_SPAWN
 
+
 def render_game(current_frame: int):
     global field, d_snake, t_snake
     global SNACK_SPAWN
@@ -141,8 +145,10 @@ def render_game(current_frame: int):
         snack_spawn_timer = SNACK_SPAWN
     snack_spawn_timer -= 1
 
-    d_snake.move(CAi.act(field, d_snake))
-    # field.move_snake(1, direction)
+    # d_snake.move(CAi.act(field, d_snake))
+    # t_snake.move(CAi.act(field, t_snake))
+    t_snake.move(get_direction(field, t_snake))
+    d_snake.move(get_direction(field, d_snake))
     field.remove_snakes()
     field.draw(screen)
     py.draw.line(screen, LIGHT_BACKGROUND_COLOR, (height, 0), (height, height), 3)
