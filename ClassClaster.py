@@ -171,8 +171,9 @@ class Field:
     # returns spawned snake
     def spawn_snake(self, head_position: Position, facing: State, length: int, live: LiveState, coyote_death_time: int,
                     drop_start_sprint: bool, sprint_lose_weight: int, odd_when_dying: float):
-        return self.snakes.append(Snake(head_position, facing, length, live, coyote_death_time,
+        self.snakes.append(Snake(head_position, facing, length, live, coyote_death_time,
                                         drop_start_sprint, sprint_lose_weight, odd_when_dying, self))
+        return self.snakes[-1]
 
     def spawn_snack(self, position: Position) -> bool:
         square = self.get_square(position)

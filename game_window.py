@@ -5,6 +5,8 @@ from enum import Enum
 import math
 import os
 
+import CrazySnakeAI.brain as CAi
+
 # Size of user's monitor
 MONITOR_WIDTH = get_monitors()[0].width
 MONITOR_HEIGHT = get_monitors()[0].height
@@ -16,6 +18,8 @@ height = MONITOR_HEIGHT / 2
 field_size = height * 0.85
 FIELD_SQUARE_SIZE = 25
 field = Field(height * 0.075, height * 0.075, FIELD_SQUARE_SIZE, field_size)
+d_snake = None
+t_snake = None
 
 # Base colors for game elements
 BACKGROUND_COLOR = color("577590")
@@ -39,9 +43,11 @@ def start_game():
     BACKGROUND_COLOR = color("263340")
     game_state = GameState.GAME
 
-    global field
-    field.spawn_snake(Position(10, 6), State.HEAD_RIGHT, 6, LiveState.REVIVABLE, 3, True, 30, 0.5)
-    field.spawn_snake(Position(20, 15), State.HEAD_RIGHT, 6, LiveState.REVIVABLE, 3, True, 30, 0.5)
+    global field, d_snake, t_snake
+    d_snake = field.spawn_snake(Position(10, 6), State.HEAD_RIGHT, 6, LiveState.REVIVABLE, 3, True, 30, 0.5)
+    t_snake = field.spawn_snake(Position(20, 15), State.HEAD_RIGHT, 6, LiveState.REVIVABLE, 3, True, 30, 0.5)
+    
+    CAi.start_game(d_snake)
 
 
 # Toggles fullscreen
@@ -111,75 +117,19 @@ def render_main_menu(current_frame: int):
         button.process()
 
 
-w_pressed = False
-a_pressed = False
-s_pressed = False
-d_pressed = False
-j_pressed = False
-
 SNACK_SPAWN = 200
 APPLE_SPAWN = 800
 snack_spawn_timer = SNACK_SPAWN
 apple_spawn_timer = APPLE_SPAWN
 
-direction = State.HEAD_RIGHT
-
-
 def render_game(current_frame: int):
-    global field
-    global w_pressed
-    global a_pressed
-    global s_pressed
-    global d_pressed
-    global j_pressed
+    global field, d_snake, t_snake
     global SNACK_SPAWN
     global APPLE_SPAWN
     global snack_spawn_timer
     global apple_spawn_timer
-    global direction
 
     screen.fill(BACKGROUND_COLOR)
-    keys = py.key.get_pressed()
-    if keys[py.K_w]:
-        if not w_pressed:
-            w_pressed = True
-            direction = State.HEAD_UP
-    else:
-        if w_pressed:
-            w_pressed = False
-
-    if keys[py.K_a]:
-        if not a_pressed:
-            a_pressed = True
-            direction = State.HEAD_LEFT
-    else:
-        if a_pressed:
-            a_pressed = False
-
-    if keys[py.K_s]:
-        if not s_pressed:
-            s_pressed = True
-            direction = State.HEAD_DOWN
-    else:
-        if s_pressed:
-            s_pressed = False
-
-    if keys[py.K_d]:
-        if not d_pressed:
-            d_pressed = True
-            direction = State.HEAD_RIGHT
-    else:
-        if d_pressed:
-            d_pressed = False
-
-    if keys[py.K_j]:
-        if not j_pressed:
-            j_pressed = True
-            field.set_snakes_speed_state(0, SpeedState.ACCELERATION)
-    else:
-        if j_pressed:
-            j_pressed = False
-            field.set_snakes_speed_state(0, SpeedState.NORMAL)
 
     if apple_spawn_timer == 0:
         field.random_spawn_apple()
@@ -191,7 +141,7 @@ def render_game(current_frame: int):
         snack_spawn_timer = SNACK_SPAWN
     snack_spawn_timer -= 1
 
-    field.move_snake(0, direction)
+    d_snake.move(CAi.act(field, d_snake))
     # field.move_snake(1, direction)
     field.remove_snakes()
     field.draw(screen)
